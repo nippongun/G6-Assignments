@@ -1,0 +1,29 @@
+#if 1
+void zmain(void)
+ {
+    TickType_t start;
+    TickType_t end;
+    int time = 0;
+    motor_start();
+    motor_forward(0,0);
+    while(SW1_Read() != 0){
+        vTaskDelay(100);
+    }
+    while(1)
+    {
+        start = xTaskGetTickCount();
+        motor_forward(100,1000);
+        end = xTaskGetTickCount();
+        time = end - start;
+        if( time >= 1)
+        {
+            printf("%d", time);
+            start = xTaskGetTickCount();
+            motor_turn(108,0,1000);
+            end = xTaskGetTickCount();
+            printf("%d", time);
+        }
+    }
+    vTaskDelay(2000);
+ }
+#endif

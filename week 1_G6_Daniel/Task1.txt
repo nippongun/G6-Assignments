@@ -1,0 +1,29 @@
+void zmain(void)
+{
+    printf("\nHello...\n");
+    char sos[] = "...---...";
+    int i;    
+    while(true)
+    { 
+        if(SW1_Read() == 0)
+        {
+            for(i=0;sos[i]!=0;i++)
+            { 
+                if(sos[i] == '.')
+                {
+                    BatteryLed_Write(1);
+                    vTaskDelay(500);
+                    BatteryLed_Write(0);
+                    vTaskDelay(500);
+                }
+                if(sos[i] == '-')
+                {
+                    BatteryLed_Write(1);
+                    vTaskDelay(1500);
+                    BatteryLed_Write(0);
+                    vTaskDelay(500);
+                }   
+            }
+        }
+    }
+ }   
