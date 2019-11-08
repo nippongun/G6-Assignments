@@ -1,0 +1,22 @@
+  //week3 assignment1
+void zmain(void)
+ {
+ 
+    motor_start();
+    motor_forward(0,0);
+    while(SW1_Read() != 0){
+        vTaskDelay(100);
+    }
+
+    motor_turn(105,100,4100);
+    motor_turn(109,0,1000);
+    motor_turn(105,100,3000);
+    motor_turn(116,0,1000);
+    motor_turn(105,100,3500);
+    motor_turn(130,0,1000);
+    motor_turn(105,60,3200);
+    motor_turn(105,5,800);
+    motor_turn(105,100,1500);
+    motor_forward(0,0);
+    vTaskDelay(2000);
+ }
