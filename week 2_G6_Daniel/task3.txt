@@ -1,3 +1,5 @@
+#if 1
+//battery level//
 void zmain(void)
 {
     ADC_Battery_Start();        
@@ -40,3 +42,4 @@ void zmain(void)
         }
     }
  }   
+#endif
