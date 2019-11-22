@@ -57,42 +57,76 @@ void zmain(void)
     int x = 0;
     int check = 0;
     
-    int turn_delay = 580;
+    TickType_t start, end;
     int general_speed = 100;
     
     motor_start();
     reflectance_start();
-
-    reflectance_set_threshold(9000, 9000, 11000, 11000, 9000, 9000);
+    IR_Start();
+    reflectance_set_threshold(13000, 13000, 13000, 13000, 13000, 13000);
     while(SW1_Read() != 0)
         {
             vTaskDelay(100);
         }
     while(1)
     {
-        reflectance_read(&ref); 
-         
-        if((ref.l2 >= 13000) && (ref.r2 >= 13000)&& check == 0){
+        reflectance_digital(&ref); 
+        
+        if(check == 0){
+            
+            while(ref.l1 != 1){
+                //tank_turn(general_speed, RIGHT,1);
+                motor_turn(general_speed+8,0,1);
+                reflectance_digital(&ref); 
+            }
+            while(ref.r1 != 1){
+                //tank_turn(general_speed, LEFT,1);
+                motor_turn(0,general_speed,1);
+                reflectance_digital(&ref); 
+            }
+        }
+        if((ref.l3 == 1) && (ref.r3 == 1)&& (check == 0)){
             check = 1;
             x++;
+            start = xTaskGetTickCount();    
+        } else if((ref.l3 == 0) && (ref.r3 == 0) && (check != 0)){
+            end = xTaskGetTickCount();
+            motor_forward(general_speed,end - start);
             
-            if ( x == 5 ){
+            if( x == 2 && check == 1){
+                while(ref.l1 == 0 || ref.r1 == 0){
+                    tank_turn(general_speed,LEFT,1);
+                    reflectance_digital(&ref);
+                }
+                motor_forward(0,500);
+                check = 0;
+            } 
+            if(x == 1){
+                motor_forward(0,0);
+                IR_wait();
+            }
+            if((x == 3 || x == 4) && check == 1){ 
+                
+                while(ref.l1 != 0){
+                    tank_turn(general_speed,RIGHT,1);
+                    reflectance_digital(&ref);
+                }
+                
+                motor_forward(0,500);
+                
+                while(ref.r1 != 1){
+                    tank_turn(general_speed,RIGHT,1);
+                    reflectance_digital(&ref);
+                }
+                motor_forward(0,500);
+                check = 0;
+            }      
+            if(x == 5){
                 motor_stop();
             }
-            
-            motor_turn(general_speed+8,general_speed,100);
-            
-            if(x==2){
-               tank_turn(general_speed,LEFT,turn_delay);
-               motor_forward(0,500);
-            } else if(x == 3 || x == 4){
-                tank_turn(general_speed+3,RIGHT,turn_delay);
-                motor_forward(0,500);
-            }
-        } else if((ref.l2 < 13000) && (ref.r2 < 13000)){
             check = 0;
-        }
-        motor_turn(general_speed+8,general_speed,0);
+        }    
+        motor_turn(general_speed+8,general_speed,1);
     }
  }
 #endif
