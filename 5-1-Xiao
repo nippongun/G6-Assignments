@@ -1,0 +1,35 @@
+#if 0
+    //week5 assignment1
+void zmain(void)
+{      
+    RTC_Start(); // start real time clock
+    
+    RTC_TIME_DATE now;
+    vTaskDelay(10000);
+    int hour,min;
+    
+    printf("Enter the current hour:");
+    scanf("%d",&hour);
+    printf("Enter the current min:");
+    scanf("%d",&min);
+    now.Hour = hour;
+    now.Min = min;
+
+    RTC_WriteTime(&now);
+
+    while(true)
+    {
+        if(SW1_Read() == 0) {
+
+            RTC_DisableInt();
+            now = *RTC_ReadTime();
+            RTC_EnableInt(); 
+            printf("%2d:%02d:%02d\n", now.Hour, now.Min,now.Sec);
+            print_mqtt("Zumo061/time:","%2d:%02d:%02d", now.Hour, now.Min,now.Sec);
+            
+            while(SW1_Read() == 0) vTaskDelay(50);
+        }
+        vTaskDelay(50);
+    }
+ }   
+#endif
