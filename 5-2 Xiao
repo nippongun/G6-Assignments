@@ -1,0 +1,34 @@
+#if 0
+    //week5 assigment2
+   void zmain(){
+        struct accData_ data;
+        LSM303D_Start();
+        motor_start();
+        uint8_t speed = 100;
+        uint8_t l_speed, r_speed;
+        while(SW1_Read()!=0){
+            vTaskDelay(50);
+        }
+        while(1){
+            l_speed = (rand() % (150 - 70 + 1)) + 70;
+            r_speed = (rand() % (150 - 70 + 1)) + 70;
+            for(int i = 0; i < 1000; i++){
+                motor_turn(l_speed, r_speed,1);
+                LSM303D_Read_Acc(&data);
+                if(data.accX < -4000){
+                    printf("x:%10d y:%10d\n",data.accX,data.accY);
+                    motor_backward(speed,500);  
+                    float r = rand() / ((float) RAND_MAX);
+                    if(r < 0.5){
+                        motor_turn(108,0,1000);
+                        print_mqtt("Zumo061/turn","lift");
+                    } else if (r >= 0.5){
+                        motor_turn(0,108,1000);
+                        print_mqtt("Zumo061/turn","right");
+                    }
+                    motor_forward(0,0);
+                }
+            }      
+        }
+    } 
+#endif
