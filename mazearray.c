@@ -116,7 +116,7 @@ void zmain(){
         } 
         // Main Part
         // THis checks for the intersections
-        if(((dig.l3 == 1) && (dig.r3 == 1)&& (check == 0)) || (coordinates.x == 3 && (dig.l3 == 1) )||(coordinates.x == -3 && (dig.r3 == 1) )){
+        if(((dig.l3 == 1) && (dig.r3 == 1)&& (check == 0)) || (coordinates.x == 3 && (dig.l3 == 1) && direction == NORTH && (dig.r3 == 0))||(coordinates.x == -3 && (dig.r3 == 1) && direction == NORTH &&(dig.l3 == 0) )){
             check = 1;
             start = xTaskGetTickCount();   
             if(direction == NORTH){
@@ -142,7 +142,7 @@ void zmain(){
             checkObject();
             add_object();
             turn();
-            
+            turn();
             
                         
             check = 0;
@@ -168,9 +168,11 @@ void r90(){
     }
     motor_forward(0,500);
     
-    while(dig.r1 != 0){
-        tank_turn(speed,RIGHT,1);
-        reflectance_digital(&dig);
+    if(coordinates.x > -3 && coordinates.x <= 0){
+        while(dig.r1 != 0){
+            tank_turn(speed,RIGHT,1);
+            reflectance_digital(&dig);
+        }
     }
     motor_forward(0,500);
     direction++;
@@ -192,9 +194,11 @@ void l90(){
         tank_turn(speed,LEFT,1);
         reflectance_digital(&dig);
     }
-    while(dig.l1 != 0){
-        tank_turn(speed,LEFT,1);
-        reflectance_digital(&dig);
+    if(coordinates.x < 3 && coordinates.x >= 0){
+        while(dig.l1 != 0){
+            tank_turn(speed,LEFT,1);
+            reflectance_digital(&dig);
+        }
     }
     motor_forward(0,500);
     direction--;
@@ -243,7 +247,7 @@ void forward(){
         checkObject();
     }
 }
-//To avoid false negatives, i.e the sonic sensors don't read objects properly, the readinf must be done redundantly.
+//To avoid false negatives, i.e the sonic sensors don't read objects properly, the reading must be done redundantly.
 //
 void checkObject(){
     
@@ -261,31 +265,7 @@ void checkObject(){
 
 void turn(){
     
-    if(direction == NORTH){
-        // if left and right of the bot
-        if(maze[coordinates.y+yOffset][coordinates.x+xOffset+1] && maze[coordinates.y+yOffset][coordinates.x+xOffset-1] && maze[coordinates.y+yOffset+1][coordinates.x+xOffset]== 0  && direction==NORTH){
-            //go forward
-            //forward();
-        // if in front and right 
-        } else if (maze[coordinates.y+yOffset+1][coordinates.x+xOffset] &&maze[coordinates.y+yOffset][coordinates.x+1+xOffset] && direction == NORTH){
-            // go left
-            l90();
-        // if in front and left    
-        } else if(maze[coordinates.y+yOffset+1][coordinates.x+xOffset]&&maze[coordinates.y+yOffset][coordinates.x+xOffset-1] && direction == NORTH){
-            // go right
-            r90();
-        // if in front and coordinates.x >= 0
-        } else if(maze[coordinates.y+yOffset+1][coordinates.x+xOffset]&& coordinates.x >= 0 && direction == NORTH){
-            //go left
-            l90();
-        } else if(maze[coordinates.y+yOffset+1][coordinates.x+xOffset]==1 && maze[coordinates.y+yOffset][coordinates.x+xOffset-1] == 0){
-            l90();
-        } else if(maze[coordinates.y+1][coordinates.x+xOffset]==0){
-            //forward();
-        }
-    }
-    
-    if(direction == WEST) {
+     if(direction == WEST) {
       
         // if object above and no object left
         if(maze[coordinates.y+1][coordinates.x+xOffset]==1 && maze[coordinates.y][coordinates.x-1+xOffset] == 0){
@@ -296,29 +276,67 @@ void turn(){
         } else if(maze[coordinates.y][coordinates.x+xOffset-1]== 1 && maze[coordinates.y+1][coordinates.x+xOffset] == 1){
             r90();
             r90();
+            motor_stop();
         }
        
     }
     if(direction == EAST) {
       
         // if object above and no object right
+        
         if(maze[coordinates.y+1][coordinates.x+xOffset]==1 && maze[coordinates.y][coordinates.x+1+xOffset] == 0){
-            // go forward    
-            forward();
+        
+        //
         } else if(maze[coordinates.y+1][coordinates.x+xOffset]== 0 || maze[coordinates.y][coordinates.x+1+xOffset] == 1){
             l90();
+            
+        /* ▓
+        *  >▓  
+        */    
+        // if an object above and right of the bot
         } else if(maze[coordinates.y][coordinates.x+xOffset+1]== 1 && maze[coordinates.y+1][coordinates.x+xOffset] == 1){
+            // go left twice
             l90();
             l90();
         }
        
     }
+    
+    if(direction == NORTH){
+        // if left and right of the bot
+        if(maze[coordinates.y+yOffset][coordinates.x+xOffset+1] && maze[coordinates.y+yOffset][coordinates.x+xOffset-1] && maze[coordinates.y+yOffset+1][coordinates.x+xOffset]== 0  && direction==NORTH){
+            //go forward
+            //forward();
+        // if an object ahead and the block next to it blocking the way, and the intersect on the right upper corner is open, go right
+        } else if(maze[coordinates.y+1][coordinates.x+xOffset-1]&&maze[coordinates.y+1][coordinates.x+xOffset]&& maze[coordinates.y+1][coordinates.x+xOffset+1] == 0){
+            // ho right
+            r90();
+        // if in front and right 
+        } else if (maze[coordinates.y+yOffset+1][coordinates.x+xOffset] &&maze[coordinates.y+yOffset][coordinates.x+1+xOffset] && direction == NORTH){
+            // go left
+            l90();
+            //motor_stop();
+        // if in front and left    
+        } else if(maze[coordinates.y+yOffset+1][coordinates.x+xOffset]&&maze[coordinates.y+yOffset][coordinates.x+xOffset-1]){
+            // go right
+            r90();
+            //motor_stop();
+            // if in front is occupied and left is free, 
+        } else if(maze[coordinates.y+yOffset+1][coordinates.x+xOffset]==1 && maze[coordinates.y+yOffset][coordinates.x+xOffset-1] == 0){
+            // turn left
+            l90();
+        } else if(maze[coordinates.y+1][coordinates.x+xOffset]==0){
+            //forward();
+        }
+    }
+    
+   
 
 }
 
 void add_object(){
     if(object){
-        //motor_stop();
+        //Beep(250,1);
         print_mqtt("Zumo061/","Object");
         object_count++;               
         counter = 0;
