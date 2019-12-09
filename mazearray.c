@@ -75,7 +75,7 @@ void zmain(){
     int object = 0;
     //uint8_t speed = 100;
 
-    TickType_t start = 0, end = 0;
+    TickType_t start = 0, end = 0, begin = 0, final = 0;
 
 
     struct sensors_ dig;
@@ -98,6 +98,14 @@ void zmain(){
     while(SW1_Read() != 0){
         vTaskDelay(1);
     }
+    while(dig.r3 != 1 && dig.l3 !=1){
+        motor_forward(speed,0);
+        reflectance_digital(&dig);
+    }
+    motor_forward(0,0);
+    IR_wait();
+    begin = xTaskGetTickCount();
+    print_mqtt("Zumo061/time","%d",begin);
     while(1){
                 
         checkObject(ultra_array,&object);
@@ -117,7 +125,7 @@ void zmain(){
         } 
         // Main Part
         // THis checks for the intersections
-        if(((dig.l3 == 1) && (dig.r3 == 1)&& (check == 0)) || (cor.x == 3 && (dig.l3 == 1) && dir == NORTH && (dig.r3 == 0))||(cor.x == -3 && (dig.r3 == 1) && dir == NORTH &&(dig.l3 == 0) )){
+        if(((cor.x == 3) && (dig.l3 == 1)  && (dig.r3 == 0) && (dir == NORTH) && (check == 0)) || ((cor.x == -3) && (dig.r3 == 1) &&(dig.l3 == 0) && (dir == NORTH) && (check == 0)) || ((dig.l3 == 1) && (dig.r3 == 1)&& (check == 0)) ){
             check = 1;
             start = xTaskGetTickCount();   
             if(dir == NORTH){
@@ -141,7 +149,30 @@ void zmain(){
             add_object(&object,&dir,&cor,maze);
             turn(&dir,&cor,maze,&dig,&check);
             turn(&dir,&cor,maze,&dig,&check);
-                          
+                     
+            
+            if(cor.y>=11){
+                if(dir == WEST && cor.x == 0){
+                    r90(&dig, &cor, &dir, &check);
+                }else if(dir == EAST && cor.x == 0){
+                    l90(&dig, &cor, &dir, &check);
+                } else if( dir == NORTH){
+                    if(cor.x > 0){
+                        l90(&dig, &cor, &dir, &check);
+                    } 
+                    if( cor.x < 0){
+                        r90(&dig, &cor, &dir, &check);
+                    }
+                }  
+                if(cor.x == 0 && cor.y == 13){
+                    final = xTaskGetTickCount();
+                    motor_stop();
+                    print_mqtt("Zumo061/time","%d",final-begin);
+                }
+            }
+            
+            
+            
             check = 0;
         }
         motor_forward(speed,0);
@@ -173,7 +204,7 @@ void r90( struct sensors_ *dig, coordinates *cor,enum Direction *dir, int *check
     }
     motor_forward(0,500);
     *dir = *dir+1;
-    print_mqtt("Zumo061/","%d",dir);
+    print_mqtt("Zumo061/","%d",*dir);
     *check = 0;
     //checkObject();
 }
@@ -200,7 +231,7 @@ void l90( struct sensors_ *dig, coordinates *cor,enum Direction *dir, int *check
     }
     motor_forward(0,500);
     *dir = *dir-1;
-    print_mqtt("Zumo061/","%d",dir);
+    print_mqtt("Zumo061/","%d",*dir);
     *check = 0;
     //checkObject(int ultra_array[], int );
 }
@@ -247,7 +278,6 @@ void turn(enum Direction *dir, coordinates *cor, int (* maze)[9], struct sensors
         } else if(maze[cor->y][cor->x+xOffset-1]== 1 && maze[cor->y+1][cor->x+xOffset] == 1){
             r90(dig, cor, dir, check);
             r90(dig, cor, dir, check);
-            motor_stop();
         }
        
     }
