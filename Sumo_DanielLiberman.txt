@@ -9,6 +9,8 @@ void zmain(void)
     reflectance_start();
     LSM303D_Start();
     motor_start();
+    TickType_t start;
+    TickType_t end;
     struct sensors_ dig;
     struct accData_ data;
     float hit_x = 0;
@@ -45,8 +47,14 @@ void zmain(void)
         }
     }
     motor_forward(0,0); 
+    print_mqtt("Zumo061/ready","zumo"); 
+    start = xTaskGetTickCount();
     //wait for IR remote//
     IR_wait();
+    end = xTaskGetTickCount();
+    time=end-start;
+    print_mqtt("Zumo061/start","%d",time);  
+    
     //First while loop meant to move around the ring in a constant speed//
     while(1)
     {
