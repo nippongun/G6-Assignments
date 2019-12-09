@@ -1,6 +1,5 @@
 //SumoWrestling
-//important note: Include #include <math.h> on the top of the file 
-#if 0
+#if 1
 void motor_tR(uint8 speed,uint32 delay);    
 void motor_tL(uint8 speed,uint32 delay);
 void zmain(void)
@@ -53,9 +52,9 @@ void zmain(void)
     {
         reflectance_digital(&dig);
         distance = Ultra_GetDistance();
-        while((distance > 15) && (dig.l2 == 0 || dig.r2 == 0))
+        while((distance > 10) && (dig.l2 == 0 || dig.r2 == 0))
         {
-            motor_forward(150,1);
+            motor_forward(130,1);
             distance = Ultra_GetDistance();
             reflectance_digital(&dig);
             LSM303D_Read_Acc(&data);
@@ -80,7 +79,7 @@ void zmain(void)
             //if the robot gets a value over 4000 in x/y axis it will print in the mqtt the angle
             //that the robot got hit
         }
-        else if(dig.r3 == 1 || dig.r2 == 1 || dig.r1 == 1)
+        else if(dig.r3 == 1 || dig.r2 == 1)
         {
             distance = Ultra_GetDistance();
             motor_backward(200,100);
@@ -136,3 +135,4 @@ void motor_tL(uint8 speed,uint32 delay)
     PWM_WriteCompare2(speed); 
     vTaskDelay(delay);
 }
+#endif
