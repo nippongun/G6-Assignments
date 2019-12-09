@@ -1,19 +1,25 @@
 // Line following
-#if 1 
+#if 1
 void motor_tR(uint8 l_speed, uint8 r_speed, uint32 delay);    
 void motor_tL(uint8 l_speed, uint8 r_speed, uint32 delay);    
 void zmain(void)
  { 
     struct sensors_ dig;
+    TickType_t start;
+    TickType_t end;
+    int time;
+    int time1;
     reflectance_start();
     motor_start();
     IR_Start();
     int count = 0;
     reflectance_set_threshold(9500, 7000, 12000, 12000, 7000, 9500);
+    //press the button to move the robot to the black line
     while(SW1_Read() != 0)
     {
         vTaskDelay(100);
     }
+    start = xTaskGetTickCount();
     reflectance_digital(&dig);
     while((dig.l3 == 0 || dig.r3 == 0) && (dig.l1 == 1 || dig.r1 == 1))
     {
@@ -30,32 +36,61 @@ void zmain(void)
             motor_forward(100,1);
         }
     }
+    //when the robot sees a white line it stops and wait for IR signal
     motor_forward(0,0);
+    print_mqtt("Zumo061/ready", "line");
     IR_wait();    
+    end = xTaskGetTickCount();
+    time1 = end - start;
+    print_mqtt("Zumo061/start", "%d",time1);
     while(1) 
     {
         reflectance_digital(&dig);
         //forward
-        while((dig.l1 == 1) && (dig.r1 == 1) && (dig.r2 == 0 || dig.l2 == 0))
-        {           
-            reflectance_digital(&dig);
-            motor_forward(230,1);
-        }
-        reflectance_digital(&dig);
-        //fix right
-        while((dig.l1 == 0)&&(dig.r2 == 1))
-            {
-            reflectance_digital(&dig);
-            motor_tR(120,95,1);
-            }
-        reflectance_digital(&dig);
-        //fix left    
-        while((dig.r1 == 0)&&(dig.l2 == 1))    
+        //if loop to show when it comes back to the line
+        if((dig.l1 == 1) && (dig.r1 == 1) && (dig.r2 == 0 ||dig.l2 == 0))
         {
-            reflectance_digital(&dig);        
-            motor_tL(95,120,1);
+            reflectance_digital(&dig);
+            end = xTaskGetTickCount();
+            time = end - start;
+            print_mqtt("Zumo061/line", "%d",time);
+            while((dig.l1 == 1) && (dig.r1 == 1) && (dig.r2 == 0 ||dig.l2 == 0))
+            {           
+                reflectance_digital(&dig);
+                motor_forward(195,1);
+            }
+        }
+        //turn right
+        //if loop to show when it misses the line
+        else if((dig.l1 == 0)&&(dig.r2 == 1))
+        {
+            reflectance_digital(&dig);
+            end = xTaskGetTickCount();
+            time = end - start;
+            print_mqtt("Zumo061/miss", "%d",time);
+            while((dig.l1 == 0)&&(dig.r2 == 1))
+                {
+                reflectance_digital(&dig);
+                motor_tR(100,100,1);
+                }
+        }
+        //turn left
+        //if loop to show when it misses the line
+        else if((dig.r1 == 0)&&(dig.l2 == 1))
+        {
+            reflectance_digital(&dig);
+            end = xTaskGetTickCount();
+            time = end - start;
+            print_mqtt("Zumo061/miss", "%d",time);
+            while((dig.r1 == 0)&&(dig.l2 == 1))    
+            {
+                reflectance_digital(&dig);        
+                motor_tL(100,100,1);
+            }
         }
         //stop
+        //stops on the finish line and gives the total time since the button press
+        //gives also the time from the start line
         if((count == 1)&&(dig.l3 == 1) && (dig.l2 == 1) && (dig.l1 == 1) && (dig.r1 == 1) && (dig.r2 == 1) && (dig.r3 == 1))
         {
             reflectance_digital(&dig); 
@@ -63,19 +98,23 @@ void zmain(void)
             while((dig.l3 == 1) && (dig.l2 == 1) && (dig.l1 == 1) && (dig.r1 == 1) && (dig.r2 == 1) && (dig.r3 == 1))
         {
             reflectance_digital(&dig); 
-            motor_forward(100,1);
+            motor_forward(200,1);
         }
         }
         reflectance_digital(&dig); 
         if((count == 2)&&(dig.l3 == 1) && (dig.l2 == 1) && (dig.l1 == 1) && (dig.r1 == 1) && (dig.r2 == 1) && (dig.r3 == 1))
         {
             reflectance_digital(&dig); 
-            count++;
-            while((dig.l3 == 1) && (dig.l2 == 1) && (dig.l1 == 1) && (dig.r1 == 1) && (dig.r2 == 1) && (dig.r3 == 1))
-        {
+            end = xTaskGetTickCount();
+            time = end - start;
+            print_mqtt("Zumo061/end", "%d",time);
+            print_mqtt("Zumo061/time", "%d",time - time1);
             reflectance_digital(&dig); 
+            while((dig.l3 == 1) && (dig.l2 == 1) && (dig.l1 == 1) && (dig.r1 == 1) && (dig.r2 == 1) && (dig.r3 == 1))
+            {
+            reflectance_digital(&dig);
             motor_stop();
-        }
+            }
         }
     }
 }
@@ -96,4 +135,4 @@ void motor_tL(uint8 l_speed, uint8 r_speed, uint32 delay)
     PWM_WriteCompare2(r_speed); 
     vTaskDelay(delay);
 }
-#endif 
+#endif   
