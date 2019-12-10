@@ -1,7 +1,3 @@
-// Line following
-#if 1
-void motor_tR(uint8 l_speed, uint8 r_speed, uint32 delay);    
-void motor_tL(uint8 l_speed, uint8 r_speed, uint32 delay);    
 void zmain(void)
  { 
     struct sensors_ dig;
@@ -13,7 +9,7 @@ void zmain(void)
     motor_start();
     IR_Start();
     int count = 0;
-    reflectance_set_threshold(9500, 7000, 12000, 12000, 7000, 9500);
+    reflectance_set_threshold(8500, 8000, 11000, 11000, 8000, 8500);
     //press the button to move the robot to the black line
     while(SW1_Read() != 0)
     {
@@ -24,16 +20,16 @@ void zmain(void)
     while((dig.l3 == 0 || dig.r3 == 0) && (dig.l1 == 1 || dig.r1 == 1))
     {
         reflectance_digital(&dig);
-        motor_forward(100,1);
+        motor_forward(100,0);
     }
-    if((count == 0) && (dig.l3 == 1) && (dig.l2 == 1) && (dig.l1 == 1) && (dig.r1 == 1) && (dig.r2 == 1) && (dig.r3 == 1))
+    if((count == 0) && (dig.l3 == 1) && (dig.l2 == 1) && (dig.r2 == 1) && (dig.r3 == 1))
     {
         reflectance_digital(&dig); 
         count++;
         while(dig.l3 == 1 || dig.r3 == 1)
         {
             reflectance_digital(&dig); 
-            motor_forward(100,1);
+            motor_forward(100,0);
         }
     }
     //when the robot sees a white line it stops and wait for IR signal
@@ -57,7 +53,7 @@ void zmain(void)
             while((dig.l1 == 1) && (dig.r1 == 1) && (dig.r2 == 0 ||dig.l2 == 0))
             {           
                 reflectance_digital(&dig);
-                motor_forward(195,1);
+                motor_forward(200,0);
             }
         }
         //turn right
@@ -71,7 +67,7 @@ void zmain(void)
             while((dig.l1 == 0)&&(dig.r2 == 1))
                 {
                 reflectance_digital(&dig);
-                motor_tR(100,100,1);
+                motor_turn(115,0,0);
                 }
         }
         //turn left
@@ -85,24 +81,24 @@ void zmain(void)
             while((dig.r1 == 0)&&(dig.l2 == 1))    
             {
                 reflectance_digital(&dig);        
-                motor_tL(100,100,1);
+                motor_turn(0,115,0);
             }
         }
         //stop
         //stops on the finish line and gives the total time since the button press
         //gives also the time from the start line
-        if((count == 1)&&(dig.l3 == 1) && (dig.l2 == 1) && (dig.l1 == 1) && (dig.r1 == 1) && (dig.r2 == 1) && (dig.r3 == 1))
+        if((count == 1)&&(dig.l3 == 1) && (dig.l2 == 1) && (dig.r2 == 1) && (dig.r3 == 1))
         {
             reflectance_digital(&dig); 
             count++;
-            while((dig.l3 == 1) && (dig.l2 == 1) && (dig.l1 == 1) && (dig.r1 == 1) && (dig.r2 == 1) && (dig.r3 == 1))
+            while((dig.l3 == 1) && (dig.l2 == 1) && (dig.r2 == 1) && (dig.r3 == 1))
         {
             reflectance_digital(&dig); 
-            motor_forward(200,1);
+            motor_forward(200,0);
         }
         }
         reflectance_digital(&dig); 
-        if((count == 2)&&(dig.l3 == 1) && (dig.l2 == 1) && (dig.l1 == 1) && (dig.r1 == 1) && (dig.r2 == 1) && (dig.r3 == 1))
+        if((count == 2)&&(dig.l3 == 1) && (dig.l2 == 1) && (dig.r2 == 1) && (dig.r3 == 1))
         {
             reflectance_digital(&dig); 
             end = xTaskGetTickCount();
@@ -110,7 +106,7 @@ void zmain(void)
             print_mqtt("Zumo061/end", "%d",time);
             print_mqtt("Zumo061/time", "%d",time - time1);
             reflectance_digital(&dig); 
-            while((dig.l3 == 1) && (dig.l2 == 1) && (dig.l1 == 1) && (dig.r1 == 1) && (dig.r2 == 1) && (dig.r3 == 1))
+            while((dig.l3 == 1) && (dig.l2 == 1) && (dig.r2 == 1) && (dig.r3 == 1))
             {
             reflectance_digital(&dig);
             motor_stop();
@@ -118,21 +114,3 @@ void zmain(void)
         }
     }
 }
-void motor_tR(uint8 l_speed, uint8 r_speed, uint32 delay)
-{
-    
-    MotorDirLeft_Write(0);      // set LeftMotor forward mode
-    MotorDirRight_Write(1);     // set RightMotor backward mode
-    PWM_WriteCompare1(l_speed); 
-    PWM_WriteCompare2(r_speed); 
-    vTaskDelay(delay);
-}
-void motor_tL(uint8 l_speed, uint8 r_speed, uint32 delay)
-{
-    MotorDirLeft_Write(1);      // set LeftMoto0 backward mode
-    MotorDirRight_Write(0);     // set RightMotor forward mode
-    PWM_WriteCompare1(l_speed); 
-    PWM_WriteCompare2(r_speed); 
-    vTaskDelay(delay);
-}
-#endif   
