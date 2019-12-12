@@ -77,7 +77,6 @@ void zmain(void)
     int time;
     int time2;
     int condition;
-    int distance = Ultra_GetDistance();
     bool check = 0;
     reflectance_set_threshold(9500, 9000, 11000, 11000, 9000, 9500);
     
@@ -115,7 +114,6 @@ void zmain(void)
     while(true)
     {    
         reflectance_digital(&dig);
-        distance = Ultra_GetDistance();
         
         while((dig.l3 == 0) && (dig.r3 == 0))       //While it's reading white goes forward, meant for inside the ring
         {
