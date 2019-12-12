@@ -1,0 +1,171 @@
+void motor_tR(uint8 speed,uint32 delay);    
+void motor_tL(uint8 speed,uint32 delay);
+float Division1(float hit_x, float hit_y);
+float Division2(float hit_x, float hit_y);
+float Division3(float hit_x, float hit_y);
+float Division4(float hit_x, float hit_y);
+void zmain(void)
+{
+    IR_Start();
+    reflectance_start();
+    LSM303D_Start();
+    motor_start();
+    TickType_t start;
+    TickType_t end;
+    struct sensors_ dig;
+    struct accData_ data;
+    float hit_x = 0;
+    float hit_y = 0;
+    int time;
+    int time2;
+    int condition;
+    int distance = Ultra_GetDistance();
+    bool check = 0;
+    reflectance_set_threshold(9500, 9000, 11000, 11000, 9000, 9500);
+    while(SW1_Read() != 0)
+    {
+        vTaskDelay(100);
+    }
+    
+    start = xTaskGetTickCount();
+    reflectance_digital(&dig);
+    while((dig.l3 == 0 || dig.r3 == 0) && (dig.l1 == 1 || dig.r1 == 1))
+    {
+        
+        motor_forward(100,0);
+        reflectance_digital(&dig);
+    }
+    reflectance_digital(&dig); 
+    while((dig.l3 == 1) && (dig.l2 == 1) && (dig.r2 == 1) && (dig.r3 == 1))
+    {        
+        motor_forward(100,0);
+        reflectance_digital(&dig); 
+    }
+    motor_forward(0,0);
+    print_mqtt("Zumo061/ready","line");    
+    IR_wait(); 
+    end = xTaskGetTickCount();
+    time2 = end - start;
+    print_mqtt("Zumo061/start","%d",time2);
+    condition = 0;
+    while(true)
+    {    
+        reflectance_digital(&dig);
+        distance = Ultra_GetDistance();
+        while((dig.l3 == 0) && (dig.r3 == 0))
+        {
+            motor_forward(175,0);
+            LSM303D_Read_Acc(&data);
+            reflectance_digital(&dig); 
+            hit_x = data.accX;
+            hit_y = data.accY;
+            if(!SW1_Read() )
+            {
+            end = xTaskGetTickCount();
+            time = end - start; 
+            print_mqtt("Zumo061/end","%d",time);
+            print_mqtt("Zumo061/time","%d",time - time2);  
+            check = 1;
+                while(check)
+                {
+                   motor_forward(0,0);    
+                }
+            }
+            else if((hit_x > 10000 && hit_y > 10000) && condition == 0)
+            {               
+                end = xTaskGetTickCount();
+                time = end - start;
+                Division1(hit_x, hit_y);
+                print_mqtt("Zumo061/hit 1","%d %.0f",time, Division1(hit_x, hit_y));
+                condition = 1;
+            }
+            else if((hit_x >  10000 && hit_y < -10000) && condition == 0)
+            {               
+                end = xTaskGetTickCount();
+                time = end - start;
+                Division2(hit_x, hit_y);
+                print_mqtt("Zumo061/hit 2","%d %.0f",time, Division2(hit_x, hit_y));
+                condition = 1;
+            }
+            else if((hit_x < -10000 && hit_y < -10000) && condition == 0)
+            {                
+                end = xTaskGetTickCount();
+                time = end - start;
+                Division3(hit_x, hit_y);
+                print_mqtt("Zumo061/hit 3","%d %.0f",time, Division3(hit_x, hit_y));                
+                condition = 1;
+            }
+            else if((hit_x <  -10000 && hit_y > 10000) && condition == 0)
+            {
+                end = xTaskGetTickCount();
+                time = end - start;
+                Division4(hit_x, hit_y);
+                print_mqtt("Zumo061/hit 4","%d %.0f",time, Division4(hit_x, hit_y));                  
+                condition = 1;
+            }
+        }
+        if(dig.l3 == 1 || dig.r3 == 1 || dig.r2 == 1 || dig.l2 == 1)
+        {           
+            condition = 0;
+            motor_backward(200,150);
+            motor_tR(220,300);     
+            reflectance_digital(&dig);
+        }  
+    }
+}
+void motor_tR(uint8 speed,uint32 delay)
+{
+    MotorDirLeft_Write(0);      // set LeftMotor forward mode
+    MotorDirRight_Write(1);     // set RightMotor backward mode
+    PWM_WriteCompare1(speed); 
+    PWM_WriteCompare2(speed); 
+    vTaskDelay(delay);
+}
+void motor_tL(uint8 speed,uint32 delay)
+{
+    MotorDirLeft_Write(1);      // set LeftMotor backward mode
+    MotorDirRight_Write(0);     // set RightMotor forward mode
+    PWM_WriteCompare1(speed); 
+    PWM_WriteCompare2(speed); 
+    vTaskDelay(delay);
+}
+float Division1(float hit_x, float hit_y)
+{
+    float value_hit;
+    float angle;
+    hit_x = hit_x/16000;
+    hit_y = hit_y/16000;
+    value_hit = hit_x/hit_y;
+    angle = ((atan(value_hit))*180)/M_PI;
+    return angle;
+}
+float Division2(float hit_x, float hit_y)
+{
+    float value_hit;
+    float angle;
+    hit_x = hit_x/16000;
+    hit_y = hit_y/16000;
+    value_hit = hit_x/hit_y;
+    angle = 180 + (((atan(value_hit))*180)/M_PI);  
+    return angle;
+}
+float Division3(float hit_x, float hit_y)
+{
+    float value_hit;
+    float angle;
+    hit_x = hit_x/16000;
+    hit_y = hit_y/16000;
+    value_hit = hit_x/hit_y;
+    angle = 180 + (((atan(value_hit))*180)/M_PI);   
+    return angle;
+}
+float Division4(float hit_x, float hit_y)
+{
+    float value_hit;
+    float angle;
+    hit_x = hit_x/16000;
+    hit_y = hit_y/16000;
+    value_hit = hit_x/hit_y;
+    angle = 360 + (((atan(value_hit))*180)/M_PI);   
+    return angle;
+}
