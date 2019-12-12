@@ -136,7 +136,7 @@ void zmain(void)
                 }
             }
             
-            else if((hit_x > 9800 && hit_y > 9800) && condition == 0)       //Calculates the angle of hit between 0-90 degrees
+            else if((hit_x > 7500 && hit_y > 7500) && condition == 0)       //Calculates the angle of hit between 0-90 degrees
             {               
                 end = xTaskGetTickCount();
                 time = end - start;
@@ -145,7 +145,7 @@ void zmain(void)
                 condition = 1;
             }
             
-            else if((hit_x >  9800 && hit_y < -9800) && condition == 0)     //Calculates the angle of hit between 90-180 degrees
+            else if((hit_x >  7500 && hit_y < -7500) && condition == 0)     //Calculates the angle of hit between 90-180 degrees
             {               
                 end = xTaskGetTickCount();
                 time = end - start;
@@ -154,7 +154,7 @@ void zmain(void)
                 condition = 1;
             }
             
-            else if((hit_x < -9800 && hit_y < -9800) && condition == 0)     //Calculates the angle of hit between 180-270 degrees
+            else if((hit_x < -7500 && hit_y < -7500) && condition == 0)     //Calculates the angle of hit between 180-270 degrees
             {                
                 end = xTaskGetTickCount();
                 time = end - start;
@@ -163,7 +163,7 @@ void zmain(void)
                 condition = 1;
             }
             
-            else if((hit_x <  -9800 && hit_y > 9800) && condition == 0)     //Calculates the angle of hit between 270-360 degrees
+            else if((hit_x <  -7500 && hit_y > 7500) && condition == 0)     //Calculates the angle of hit between 270-360 degrees
             {
                 end = xTaskGetTickCount();
                 time = end - start;
